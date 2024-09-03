@@ -19,7 +19,15 @@ const transactionSchema = new mongoose.Schema({
     confirmations: String,
 });
 
-// Create Model
-const Transaction = mongoose.model('Transaction', transactionSchema);
+// Ethereum Price Schema
+const ethPriceSchema = new mongoose.Schema({
+    price: Number,
+    currency: String,
+    date: { type: Date, default: Date.now }
+});
 
-module.exports = { Transaction };
+// Create Models
+const Transaction = mongoose.model('Transaction', transactionSchema);
+const EthPrice = mongoose.model('EthPrice', ethPriceSchema);
+
+module.exports = { Transaction, EthPrice };

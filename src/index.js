@@ -1,9 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const transactionRoutes = require('./routes/transactionRoutes');
-const priceRoutes = require('./routes/priceRoutes');
-const { startCronJobs } = require('./utils/cronJob');
+const routes = require('./routes');
+const { fetchEthereumPrice } = require('./controllers');
+const cron = require('node-cron');
 
 // Load environment variables
 dotenv.config();
@@ -26,11 +26,17 @@ mongoose.connect(process.env.MONGO_URI, {
 app.use(express.json());
 
 // Use routes
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/prices', priceRoutes);
+app.use('/api', routes);
 
-// Start cron jobs
-startCronJobs();
+// Schedule a cron job to fetch Ethereum price every 10 minutes
+cron.schedule('*/10 * * * *', async () => {
+    try {
+        const ethPrice = await fetchEthereumPrice();
+        console.log(`Ethereum price updated: ${ethPrice.price} INR`);
+    } catch (error) {
+        console.error('Error fetching Ethereum price:', error);
+    }
+});
 
 // Start the server
 const PORT = process.env.PORT || 5000;
