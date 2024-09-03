@@ -1,6 +1,7 @@
 const axios = require('axios');
-const Transaction = require('./models');
+const { Transaction, EthPrice } = require('./models');
 
+// Fetch and store transactions
 const fetchTransactions = async (address) => {
     try {
         const response = await axios.get('https://api.etherscan.io/api', {
@@ -27,15 +28,16 @@ const fetchTransactions = async (address) => {
     }
 };
 
+// Calculate total expenses for a user
 const calculateExpenses = async (address) => {
     try {
-        const transactions = await Transaction.find({ to: address });
+        const transactions = await Transaction.find({ from: address });
         let totalExpenses = 0;
 
         transactions.forEach(tx => {
             const gasUsed = parseInt(tx.gasUsed);
             const gasPrice = parseInt(tx.gasPrice);
-            const expense = (gasUsed * gasPrice) / 1e18;
+            const expense = (gasUsed * gasPrice) / 1e18; // Convert to Ether
             totalExpenses += expense;
         });
 
@@ -46,6 +48,7 @@ const calculateExpenses = async (address) => {
     }
 };
 
+// Fetch and store Ethereum price
 const fetchEthereumPrice = async () => {
     try {
         const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
@@ -55,7 +58,14 @@ const fetchEthereumPrice = async () => {
             }
         });
 
-        return response.data.ethereum.inr;
+        const ethPrice = new EthPrice({
+            price: response.data.ethereum.inr,
+            currency: 'INR'
+        });
+
+        await ethPrice.save(); // Save the price to the database
+
+        return ethPrice;
     } catch (error) {
         console.error('Error fetching Ethereum price:', error);
         throw new Error('Could not fetch Ethereum price');
